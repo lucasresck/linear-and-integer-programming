@@ -9,8 +9,8 @@ dependencies:
   - attrs=20.3.0=pyhd3eb1b0_0
   - backcall=0.2.0=pyhd3eb1b0_0
   - bleach=3.3.0=pyhd3eb1b0_0
-  - ca-certificates=2020.12.5=ha878542_0
-  - certifi=2020.12.5=py38h578d9bd_1
+  - ca-certificates=2021.4.13=h06a4308_1
+  - certifi=2020.12.5=py38h06a4308_0
   - cffi=1.14.5=py38h261ae71_0
   - decorator=4.4.2=pyhd3eb1b0_0
   - defusedxml=0.7.1=pyhd3eb1b0_0
@@ -21,6 +21,7 @@ dependencies:
   - ipykernel=5.3.4=py38h5ca1d4c_0
   - ipython=7.21.0=py38hb070fc8_0
   - ipython_genutils=0.2.0=pyhd3eb1b0_1
+  - ipywidgets=7.6.3=pyhd3eb1b0_1
   - jedi=0.17.0=py38_0
   - jinja2=2.11.3=pyhd3eb1b0_0
   - joblib=1.0.1=pyhd8ed1ab_0
@@ -33,6 +34,7 @@ dependencies:
   - jupyter_latex_envs=1.4.6=pyhd8ed1ab_1002
   - jupyter_nbextensions_configurator=0.4.1=py38h578d9bd_2
   - jupyterlab_pygments=0.1.2=py_0
+  - jupyterlab_widgets=1.0.0=pyhd3eb1b0_1
   - ld_impl_linux-64=2.33.1=h53a641e_7
   - libblas=3.9.0=8_openblas
   - libcblas=3.9.0=8_openblas
@@ -97,6 +99,7 @@ dependencies:
   - wcwidth=0.2.5=py_0
   - webencodings=0.5.1=py38_1
   - wheel=0.36.2=pyhd3eb1b0_0
+  - widgetsnbextension=3.5.1=py38_0
   - xz=5.2.5=h7b6447c_0
   - yaml=0.2.5=h516909a_0
   - zeromq=4.3.3=he6710b0_3
@@ -110,6 +113,7 @@ dependencies:
     - click==7.1.2
     - cymem==2.0.5
     - docutils==0.17
+    - en-core-web-sm==3.0.0
     - idna==2.10
     - murmurhash==1.0.5
     - pathy==0.4.0
@@ -118,7 +122,6 @@ dependencies:
     - pydantic==1.7.3
     - requests==2.25.1
     - smart-open==3.0.0
-    - spacy==3.0.5
     - spacy-legacy==3.0.2
     - srsly==2.4.1
     - thinc==8.0.2

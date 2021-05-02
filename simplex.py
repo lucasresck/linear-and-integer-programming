@@ -1,9 +1,58 @@
 import numpy as np
 
 class Simplex:
-    def __init__(self, tableau, max_iterations=10000):
+    def __init__(self, tableau, inequalities, domain, max_iterations=10000):
+        """
+        The constructor for the Simplex class.
+
+        As an example, if the optimization problem is
+
+        Maximize    z = c1 x1 + ... + c4 x4 + z0
+        subject to
+                    a11 x1 + ... + a14 x4 = b1
+                    a21 x1 + ... + a24 x4 = b2
+                    xi >= 0
+
+        we must have
+
+        tableau =       [[  a11 a12 a13 a14 b1  ]
+                        [   a21 a22 a23 a24 b2  ]
+                        [   c1  c2  c3  c4  -z0 ]] 
+        inequalities =  ['==', '==']
+        domain =        ['>=0', '>=0', '>=0', '>=0']
+  
+        Parameters:
+           tableau (numpy.ndarray): Tableau with linear optimization coefficients.
+           inequalities (list of str): A list of '<=', '>=' or '==' for the constraints.
+           domain (list of str): A list of 'R' or '>=0' indicating the domain of the variables.
+        """
         self.tableau = tableau.astype('float')
+        self.inequalities = inequalities
+        self.domain = domain
         self.max_iterations = max_iterations
+        self.canonize()
+
+    def canonize(self):
+        '''Canonize the linear programming problem.'''
+
+        # (1) Free variables
+        # Convert 'R' variables to difference of '>=0' variables
+
+        for i, domain in list(enumerate(self.domain))[::-1]:
+            if domain == 'R':
+                self.tableau = np.hstack([self.tableau[:, :(i+1)], -self.tableau[:, [i]], self.tableau[:, (i+1):]])
+
+        # (2) Inequality constraints
+        # The inequality constraints are converted to equality
+        # via adding slack and surplus variables
+
+        for i, ineq in enumerate(self.inequalities):
+            if ineq == '<=':
+                self.tableau = np.hstack([self.tableau[:, :-1], np.zeros((len(self.tableau), 1)), self.tableau[:, [-1]]])
+                self.tableau[i, -2] = 1
+            elif ineq == '>=':
+                self.tableau = np.hstack([self.tableau[:, :-1], np.zeros((len(self.tableau), 1)), self.tableau[:, [-1]]])
+                self.tableau[i, -2] = -1
 
     def simplex(self):
         '''
@@ -24,9 +73,9 @@ class Simplex:
         The representation is a tableau such as:
 
             x1  x2  x3  x4
-        [[  a11 a12 a13 a14 b1]
-        [   a21 a22 a23 a24 b2]
-        [   c1  c2  c3  c4  -z0]]        
+        [[  a11 a12 a13 a14 b1  ]
+        [   a21 a22 a23 a24 b2  ]
+        [   c1  c2  c3  c4  -z0 ]]        
         '''
 
         m, n = np.array(self.tableau.shape) - 1

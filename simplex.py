@@ -34,25 +34,114 @@ class Simplex:
 
     def canonize(self):
         '''Canonize the linear programming problem.'''
+        print('Canonizing the linear programming problem...')
 
         # (1) Free variables
         # Convert 'R' variables to difference of '>=0' variables
 
-        for i, domain in list(enumerate(self.domain))[::-1]:
-            if domain == 'R':
-                self.tableau = np.hstack([self.tableau[:, :(i+1)], -self.tableau[:, [i]], self.tableau[:, (i+1):]])
+        print('    Converting free variables to nonnegative variables...', end='')
+
+        self.convert_free_var()
+
+        print(' Done.')
 
         # (2) Inequality constraints
         # The inequality constraints are converted to equality
         # via adding slack and surplus variables
 
+        print('    Converting inequalities to equalities using slack and surplus variables...', end='')
+
+        self.convert_inequalities()
+
+        print(' Done.')
+
+        # (3) Negative righthand side coefficients
+        # Multiply equations with a negative righthand side coefficient by −1
+
+        print('    Multiplying equations with a negative righthand side coefficient by −1...', end='')
+
+        self.multiply_minus_one()
+
+        print(' Done.')
+
+        # (4) Artificial variables
+        # Create a basis if there is not one
+
+        print('    Checking artificial variables needed...', end='')
+
+        artificial_needed = self.check_artificial_variables()
+
+        print('We need {} artificial variable(s).'.format(len(artificial_needed)))
+
+        if len(artificial_needed) > 0:
+            print('        Adding artificial variable(s)...', end='')
+
+            self.add_artificial_variables(artificial_needed)
+
+            print(' Done.')
+
+        print('Finished canonization.')
+
+    def convert_free_var(self):
+        '''Convert free variables to nonnegative variables.'''
+        for i, domain in list(enumerate(self.domain))[::-1]:
+            if domain == 'R':
+                self.tableau = np.hstack([
+                    self.tableau[:, :(i+1)],
+                    -self.tableau[:, [i]],
+                    self.tableau[:, (i+1):]
+                ])
+
+    def convert_inequalities(self):
+        '''Convert inequalities to equalities, adding slack and surplus variables.'''
         for i, ineq in enumerate(self.inequalities):
             if ineq == '<=':
-                self.tableau = np.hstack([self.tableau[:, :-1], np.zeros((len(self.tableau), 1)), self.tableau[:, [-1]]])
+                self.tableau = np.hstack([
+                    self.tableau[:, :-1],
+                    np.zeros((len(self.tableau), 1)),
+                    self.tableau[:, [-1]]
+                ])
                 self.tableau[i, -2] = 1
             elif ineq == '>=':
-                self.tableau = np.hstack([self.tableau[:, :-1], np.zeros((len(self.tableau), 1)), self.tableau[:, [-1]]])
+                self.tableau = np.hstack([
+                    self.tableau[:, :-1],
+                    np.zeros((len(self.tableau), 1)),
+                    self.tableau[:, [-1]]
+                ])
                 self.tableau[i, -2] = -1
+
+    def multiply_minus_one(self):
+        '''Multiply equations with a negative righthand side coefficient by −1.''' 
+        for i in range(len(self.tableau) - 1):
+            if self.tableau[i, -1] < 0:
+                self.tableau[i, :] = -1*self.tableau[i, :]
+
+    def check_artificial_variables(self):
+        '''Check if artificial variables are needed.'''
+        artificial_not_needed = []
+        for j in range(self.tableau.shape[1] - 1):
+            if np.all(self.tableau[:, j] >= 0):
+                if np.sum(self.tableau[:, j] > 0) == 1:
+                    i = np.argmax(self.tableau[:, j])
+                    self.tableau[i, :] = self.tableau[i, :]/self.tableau[i, j]
+                    artificial_not_needed.append(i)
+
+        artificial_needed = set(range(len(self.tableau) - 1)) - set(artificial_not_needed)
+        artificial_needed = list(artificial_needed)
+        return artificial_needed
+
+    def add_artificial_variables(self, artificial_needed):
+        '''Add needed artificial variables.'''
+        self.tableau = np.hstack([
+            self.tableau[:, :-1],
+            np.zeros((len(self.tableau), len(artificial_needed))),
+            self.tableau[:, [-1]]
+        ])
+
+        artificial_needed = sorted(artificial_needed, reverse=True)
+
+        for j, i in enumerate(artificial_needed):
+            self.tableau[i, -2-j] = 1
 
     def simplex(self):
         '''

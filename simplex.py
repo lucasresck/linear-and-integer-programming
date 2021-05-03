@@ -30,23 +30,31 @@ class Simplex:
         self.inequalities = inequalities
         self.domain = domain
         self.max_iterations = max_iterations
+        self.tab = ''
         self.optimize()
 
     def optimize(self):
         '''Optimize the linear programming problem.'''
-        self.canonize()
-        print('Start the simplex algorithm...', end='')
-        self.simplex()
-        print(' Done.')
+        print(self.tab + 'Canonizing the linear programming problem...')
+        self.tab = '    '
+        if not self.canonize():
+            return
+        self.tab = ''
+        print(self.tab + 'Finished canonization.')
+        print(self.tab + 'Starting the simplex algorithm...')
+        self.tab = '    '
+        if not self.simplex():
+            return
+        self.tab = ''
+        print(self.tab + 'Finished simplex algorithm.')
 
     def canonize(self):
         '''Canonize the linear programming problem.'''
-        print('Canonizing the linear programming problem...')
 
         # (1) Free variables
         # Convert 'R' variables to difference of '>=0' variables
 
-        print('    Converting free variables to nonnegative variables...', end='')
+        print(self.tab + 'Converting free variables to nonnegative variables...', end='')
 
         self.convert_free_var()
 
@@ -56,7 +64,7 @@ class Simplex:
         # The inequality constraints are converted to equality
         # via adding slack and surplus variables
 
-        print('    Converting inequalities to equalities using slack and surplus variables...', end='')
+        print(self.tab + 'Converting inequalities to equalities using slack and surplus variables...', end='')
 
         self.convert_inequalities()
 
@@ -65,7 +73,7 @@ class Simplex:
         # (3) Negative righthand side coefficients
         # Multiply equations with a negative righthand side coefficient by −1
 
-        print('    Multiplying equations with a negative righthand side coefficient by −1...', end='')
+        print(self.tab + 'Multiplying equations with a negative righthand side coefficient by −1...', end='')
 
         self.multiply_minus_one()
 
@@ -74,7 +82,7 @@ class Simplex:
         # (4) Artificial variables
         # Create a basis if there is not one
 
-        print('    Checking artificial variables needed...', end='')
+        print(self.tab + 'Checking artificial variables needed...', end='')
 
         self.generate_basis()
 
@@ -83,12 +91,13 @@ class Simplex:
         print(' We need {} artificial variable(s).'.format(len(artificial_needed)))
 
         if len(artificial_needed) > 0:
-            print('        Adding artificial variable(s)...', end='')
+            self.tab = '        '
+            print(self.tab + 'Adding artificial variable(s)...', end='')
 
             self.add_artificial_variables(artificial_needed)
             
             print(' Done.')
-            print('        Starting Phase I...', end='')
+            print(self.tab + 'Starting Phase I...', end='')
 
             self.phase_i(artificial_needed)
 
@@ -96,12 +105,14 @@ class Simplex:
 
             # If the artificial variables are not zero...
             if not self.is_feasible(artificial_needed):
-                print('The problem is not feasible.')
-                return
+                print(self.tab + 'The problem is not feasible.')
+                return False
             else:
+                print(self.tab + 'Starting transition from Phase I to Phase 2...', end='')
                 self.transition()
+                print(' Done.')
 
-        print('Finished canonization.')
+        return True
 
     def convert_free_var(self):
         '''Convert free variables to nonnegative variables.'''
@@ -180,7 +191,7 @@ class Simplex:
         w_objective = np.sum(self.tableau[artificial_needed], axis=0)
         w_objective[list(self.artificial_variables)] = 0
         self.tableau = np.vstack([self.tableau, w_objective])
-        self.simplex(phase_i=True)
+        _ = self.simplex(phase_i=True)
 
     def is_feasible(self, artificial_needed):
         '''Check if the problem is feasible.
@@ -245,7 +256,7 @@ class Simplex:
         
         # Step (0)
         # The problem is already canonical
-        
+
         for _ in range(self.max_iterations):
 
             # Step (1)
@@ -254,7 +265,7 @@ class Simplex:
             # If we are optimal
             if self.is_optimal():
                 self.generate_solution(n)
-                break
+                return True
             else:
 
                 # Step (2)
@@ -265,8 +276,8 @@ class Simplex:
                 # If we are in Phase I, we must not consider z objective row
                 # when checking unboundedness
                 if self.is_unbounded(s, phase_i=phase_i):
-                    print('The primal problem is unbounded.')
-                    break
+                    print(self.tab + 'The primal problem is unbounded.')
+                    return False
                 else:
                     
                     # Step (3)
@@ -278,6 +289,8 @@ class Simplex:
 
                     # Pivoting
                     self.pivoting(m, r, s)
+
+        return True
 
     def is_optimal(self):
         '''Check optimality for canonical form.'''

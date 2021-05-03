@@ -69,6 +69,8 @@ class Simplex:
 
         print('    Checking artificial variables needed...', end='')
 
+        self.generate_basis()
+
         artificial_needed = self.check_artificial_variables()
 
         print(' We need {} artificial variable(s).'.format(len(artificial_needed)))
@@ -91,7 +93,6 @@ class Simplex:
                 return
             else:
                 pass
-
 
         print('Finished canonization.')
 
@@ -129,17 +130,23 @@ class Simplex:
             if self.tableau[i, -1] < 0:
                 self.tableau[i, :] = -1*self.tableau[i, :]
 
+    def generate_basis(self):
+        '''Generate a basis for the canonical linear programming problem.'''
+        self.basis = dict()
+        already_i = []
+        for j in range(self.tableau.shape[1] - 1):
+            if np.sum(self.tableau[:, j] != np.zeros(len(self.tableau))) == 1:
+                if np.max(self.tableau[:, j]) == 1:
+                    i = np.argmax(self.tableau[:, j])
+                    if i not in already_i:
+                        self.basis.update({i: j})
+                        already_i.append(i)
+
     def check_artificial_variables(self):
         '''Check if artificial variables are needed.'''
-        artificial_not_needed = []
-        for j in range(self.tableau.shape[1] - 1):
-            if np.all(self.tableau[:, j] >= 0):
-                if np.sum(self.tableau[:, j] > 0) == 1:
-                    i = np.argmax(self.tableau[:, j])
-                    self.tableau[i, :] = self.tableau[i, :]/self.tableau[i, j]
-                    artificial_not_needed.append(i)
+        artificial_not_needed = self.basis.keys()
 
-        artificial_needed = set(range(len(self.tableau) - 1)) - set(artificial_not_needed)
+        artificial_needed = set(range(self.tableau.shape[0] - 1)) - set(artificial_not_needed)
         artificial_needed = list(artificial_needed)
         return artificial_needed
 
@@ -153,23 +160,26 @@ class Simplex:
 
         artificial_needed = sorted(artificial_needed, reverse=True)
 
+        self.artificial_variables = set()
         for j, i in enumerate(artificial_needed):
             self.tableau[i, -2-j] = 1
+            self.artificial_variables.add(-2-j)
+            self.basis.update({i: -2-j})
 
     def phase_i(self, artificial_needed):
         '''Phase 1 of simplex algorithm.
 
         Solve the problem of determining the initial solution, if it exists.'''
         w_objective = np.sum(self.tableau[artificial_needed], axis=0)
-        w_objective[-1-len(artificial_needed):-1] = 0
+        w_objective[list(self.artificial_variables)] = 0
         self.tableau = np.vstack([self.tableau, w_objective])
         self.simplex(phase_i=True)
 
     def is_feasible(self, artificial_needed):
         '''Check if the problem is feasible.
         
-        Check if the artificial variables, in the solution of Phase I, are all zero'''
-        return np.sum(np.abs(self.solution[-len(artificial_needed):])) == 0
+        Check if the artificial variables, in the solution of Phase I, are all zero'''        
+        return np.sum(np.abs(self.solution[list(self.artificial_variables)])) == 0
 
     def simplex(self, phase_i=False):
         '''
@@ -207,7 +217,7 @@ class Simplex:
 
             # If we are optimal
             if self.is_optimal():
-                self.generate_solution(m - int(phase_i), n)
+                self.generate_solution(n)
                 break
             else:
 
@@ -240,18 +250,12 @@ class Simplex:
         '''Check optimality for canonical form.'''
         return not np.sum(self.tableau[-1, :-1] > 0)
 
-    def generate_solution(self, m, n):
+    def generate_solution(self, n):
         '''Generate solution for the optimal canonical form.'''
         # Our solution starts with everything equal to zero
         self.solution = [0]*n
-        already_i = []
-        for j in range(n):
-            if np.sum(self.tableau[:, j] != np.zeros(len(self.tableau))) == 1:
-                if np.max(self.tableau[:, j]) == 1:
-                    i = np.argmax(self.tableau[:, j])
-                    if i not in already_i:
-                        self.solution[j] = self.tableau[i, -1]
-                        already_i.append(i)
+        for i, j in self.basis.items():
+            self.solution[j] = self.tableau[i, -1]
         self.solution = np.array(self.solution)
         self.objective = np.dot(self.solution, self.tableau[-1, :-1]) - self.tableau[-1, -1]
 
@@ -272,3 +276,4 @@ class Simplex:
             if i == r:
                 continue
             self.tableau[i] = self.tableau[i] - self.tableau[r] * self.tableau[i, s]
+        self.basis.update({r: s})

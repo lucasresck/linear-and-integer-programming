@@ -71,14 +71,27 @@ class Simplex:
 
         artificial_needed = self.check_artificial_variables()
 
-        print('We need {} artificial variable(s).'.format(len(artificial_needed)))
+        print(' We need {} artificial variable(s).'.format(len(artificial_needed)))
 
         if len(artificial_needed) > 0:
             print('        Adding artificial variable(s)...', end='')
 
             self.add_artificial_variables(artificial_needed)
+            
+            print(' Done.')
+            print('        Starting Phase I...', end='')
+
+            self.phase_i(artificial_needed)
 
             print(' Done.')
+
+            # If the artificial variables are not zero...
+            if not self.is_feasible(artificial_needed):
+                print('The problem if not feasible.')
+                return
+            else:
+                pass
+
 
         print('Finished canonization.')
 
@@ -143,7 +156,22 @@ class Simplex:
         for j, i in enumerate(artificial_needed):
             self.tableau[i, -2-j] = 1
 
-    def simplex(self):
+    def phase_i(self, artificial_needed):
+        '''Phase 1 of simplex algorithm.
+
+        Solve the problem of determining the initial solution, if it exists.'''
+        w_objective = np.sum(self.tableau[artificial_needed], axis=0)
+        w_objective[-1-len(artificial_needed):-1] = 0
+        self.tableau = np.vstack([self.tableau, w_objective])
+        self.simplex(phase_i=True)
+
+    def is_feasible(self, artificial_needed):
+        '''Check if the problem is feasible.
+        
+        Check if the artificial variables, in the solution of Phase I, are all zero'''
+        return np.sum(np.abs(self.solution[-len(artificial_needed):])) == 0
+
+    def simplex(self, phase_i=False):
         '''
         Apply simplex method to a tableau in canonical form.
 
@@ -179,15 +207,18 @@ class Simplex:
 
             # If we are optimal
             if self.is_optimal():
-                self.generate_solution(n)
+                self.generate_solution(m - int(phase_i), n)
                 break
             else:
 
                 # Step (2)
                 # Choose column s to pivot
 
-                s = np.argmax(self.tableau[-1])
-                if self.is_unbounded(s):
+                s = np.argmax(self.tableau[-1, :-1])
+
+                # If we are in Phase I, we must not consider z objective row
+                # when checking unboundedness
+                if self.is_unbounded(s, phase_i=phase_i):
                     print('The primal problem is unbounded.')
                     break
                 else:
@@ -195,7 +226,9 @@ class Simplex:
                     # Step (3)
                     # Choose row r to pivot
 
-                    r = self.ratio_test(m, s)
+                    # In Phase I, we can't consider z objective row
+                    # in ratio test
+                    r = self.ratio_test(m - int(phase_i), s)
 
                     # Normalization
                     self.tableau[r] = self.tableau[r] / self.tableau[r, s]
@@ -207,21 +240,24 @@ class Simplex:
         '''Check optimality for canonical form.'''
         return not np.sum(self.tableau[-1, :-1] > 0)
 
-    def generate_solution(self, n):
+    def generate_solution(self, m, n):
         '''Generate solution for the optimal canonical form.'''
-        self.solution = []
+        # Our solution starts with everything equal to zero
+        self.solution = [0]*n
+        already_i = []
         for j in range(n):
-            if self.tableau[-1][j] != 0:
-                self.solution.append(0)
-            else:
-                i = np.where(self.tableau[:, j] == 1)[0][0]
-                self.solution.append(self.tableau[i, -1])
+            if np.sum(self.tableau[:, j] != np.zeros(len(self.tableau))) == 1:
+                if np.max(self.tableau[:, j]) == 1:
+                    i = np.argmax(self.tableau[:, j])
+                    if i not in already_i:
+                        self.solution[j] = self.tableau[i, -1]
+                        already_i.append(i)
         self.solution = np.array(self.solution)
         self.objective = np.dot(self.solution, self.tableau[-1, :-1]) - self.tableau[-1, -1]
 
-    def is_unbounded(self, s):
+    def is_unbounded(self, s, phase_i):
         '''Check is objective function is unbounded.'''
-        return not np.sum(self.tableau[:-1, s] > 0)
+        return not np.sum(self.tableau[:-1-int(phase_i), s] > 0)
 
     def ratio_test(self, m, s):
         '''Ratio test for choosing which variable will be introduced into the basis.'''

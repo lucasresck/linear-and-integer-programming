@@ -30,7 +30,14 @@ class Simplex:
         self.inequalities = inequalities
         self.domain = domain
         self.max_iterations = max_iterations
+        self.optimize()
+
+    def optimize(self):
+        '''Optimize the linear programming problem.'''
         self.canonize()
+        print('Start the simplex algorithm...', end='')
+        self.simplex()
+        print(' Done.')
 
     def canonize(self):
         '''Canonize the linear programming problem.'''
@@ -89,10 +96,10 @@ class Simplex:
 
             # If the artificial variables are not zero...
             if not self.is_feasible(artificial_needed):
-                print('The problem if not feasible.')
+                print('The problem is not feasible.')
                 return
             else:
-                pass
+                self.transition()
 
         print('Finished canonization.')
 
@@ -163,8 +170,8 @@ class Simplex:
         self.artificial_variables = set()
         for j, i in enumerate(artificial_needed):
             self.tableau[i, -2-j] = 1
-            self.artificial_variables.add(-2-j)
-            self.basis.update({i: -2-j})
+            self.artificial_variables.add(self.tableau.shape[1] - j - 2)
+            self.basis.update({i: self.tableau.shape[1] - j - 2})
 
     def phase_i(self, artificial_needed):
         '''Phase 1 of simplex algorithm.
@@ -180,6 +187,35 @@ class Simplex:
         
         Check if the artificial variables, in the solution of Phase I, are all zero'''        
         return np.sum(np.abs(self.solution[list(self.artificial_variables)])) == 0
+
+    def transition(self):
+        '''Transition from Phase I to Phase II.
+        
+        It consists of pivoting variables to remove artificial variables from the basis.'''
+        # We gather the artificial variables in the basis
+        artificial_in_basis = set(self.basis.values()).intersection(self.artificial_variables)
+        artificial_not_in_basis = self.artificial_variables - artificial_in_basis
+        # Reverse the map of {constraint: isolated variable}
+        inv_basis = {v: k for k, v in self.basis.items()}
+        # Gather the non artificial variables
+        non_artificial = list(set(range(self.tableau.shape[1] - 1)) - self.artificial_variables)
+        # We must solve each artificial variable in the basis
+        to_remove = list(artificial_not_in_basis)
+        for j in artificial_in_basis:
+            # In which constraint this artificial variable is isolated
+            i = inv_basis[j]
+            # If some non-artificial variable if different from zero
+            if np.any(self.tableau[i, non_artificial] != 0):
+                # Choose column to pivot
+                s = np.min(list(set(np.where(self.tableau[i] != 0)[0]).intersection(set(non_artificial))))
+                self.pivoting(self.tableau.shape[0] - 1, i, s)
+                to_remove.append(j)
+            # else: do nothing...
+        # The pivoted artificial variables are removed...
+        self.tableau = np.delete(self.tableau, to_remove, 1)
+        self.artificial_variables = self.artificial_variables - set(to_remove)
+        # w objective function row is removed
+        self.tableau = np.delete(self.tableau, -1, 0)
 
     def simplex(self, phase_i=False):
         '''
@@ -209,7 +245,7 @@ class Simplex:
         
         # Step (0)
         # The problem is already canonical
-
+        
         for _ in range(self.max_iterations):
 
             # Step (1)
@@ -240,9 +276,6 @@ class Simplex:
                     # in ratio test
                     r = self.ratio_test(m - int(phase_i), s)
 
-                    # Normalization
-                    self.tableau[r] = self.tableau[r] / self.tableau[r, s]
-
                     # Pivoting
                     self.pivoting(m, r, s)
 
@@ -272,6 +305,10 @@ class Simplex:
 
     def pivoting(self, m, r, s):
         '''Replace the basic variable in row r with variable s via pivoting.'''
+        # Normalization
+        self.tableau[r] = self.tableau[r] / self.tableau[r, s]
+
+        # Pivoting
         for i in range(m + 1):
             if i == r:
                 continue

@@ -126,21 +126,20 @@ class Simplex:
 
     def convert_inequalities(self):
         '''Convert inequalities to equalities, adding slack and surplus variables.'''
+        j = self.tableau.shape[1] - 1
+        new_columns  = self.inequalities.count('<=') + self.inequalities.count('>=')
+        self.tableau = np.hstack([
+            self.tableau[:, :-1],
+            np.zeros((len(self.tableau), new_columns)),
+            self.tableau[:, [-1]]
+        ])
         for i, ineq in enumerate(self.inequalities):
             if ineq == '<=':
-                self.tableau = np.hstack([
-                    self.tableau[:, :-1],
-                    np.zeros((len(self.tableau), 1)),
-                    self.tableau[:, [-1]]
-                ])
-                self.tableau[i, -2] = 1
+                self.tableau[i, j] = 1
+                j += 1
             elif ineq == '>=':
-                self.tableau = np.hstack([
-                    self.tableau[:, :-1],
-                    np.zeros((len(self.tableau), 1)),
-                    self.tableau[:, [-1]]
-                ])
-                self.tableau[i, -2] = -1
+                self.tableau[i, j] = -1
+                j += 1
 
     def multiply_minus_one(self):
         '''Multiply equations with a negative righthand side coefficient by −1.''' 

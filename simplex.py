@@ -31,6 +31,7 @@ class Simplex:
         self.domain = domain
         self.max_iterations = max_iterations
         self.tab = ''
+        self.n_iter = 0
         self.optimize()
 
     def optimize(self):
@@ -257,6 +258,7 @@ class Simplex:
         # The problem is already canonical
 
         for _ in range(self.max_iterations):
+            self.n_iter += 1
 
             # Step (1)
             # We check optimality

@@ -1,7 +1,7 @@
 import numpy as np
 
 class Simplex:
-    def __init__(self, tableau, inequalities, domain, max_iterations=10000):
+    def __init__(self, tableau, inequalities, domain, max_iterations=10000, initial_solution=None):
         """
         The constructor for the Simplex class.
 
@@ -32,7 +32,14 @@ class Simplex:
         self.max_iterations = max_iterations
         self.tab = ''
         self.n_iter = 0
+        # self.initial_solution = initial_solution
+        # if self.initial_solution is not None:
+        #     self.move_problem()
         self.optimize()
+
+    # def move_problem(self):
+    #     '''Move the problem due to initial solution.'''
+
 
     def optimize(self):
         '''Optimize the linear programming problem.'''
@@ -305,6 +312,13 @@ class Simplex:
             self.solution[j] = self.tableau[i, -1]
         self.solution = np.array(self.solution)
         self.objective = np.dot(self.solution, self.tableau[-1, :-1]) - self.tableau[-1, -1]
+
+        self.beauty_solution = list(self.solution)
+        for i, var in enumerate(self.domain):
+            if var == 'R':
+                self.beauty_solution[i] = self.beauty_solution[i] - self.beauty_solution[i+1]
+                del self.beauty_solution[i+1]
+        del self.beauty_solution[len(self.domain):]
 
     def is_unbounded(self, s, phase_i):
         '''Check is objective function is unbounded.'''

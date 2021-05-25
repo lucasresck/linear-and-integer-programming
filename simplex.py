@@ -32,17 +32,30 @@ class Simplex:
         self.max_iterations = max_iterations
         self.tab = ''
         self.n_iter = 0
-        # self.initial_solution = initial_solution
-        # if self.initial_solution is not None:
-        #     self.move_problem()
+        self.initial_solution = initial_solution
+        self.tol = np.finfo(np.float).eps*100
         self.optimize()
 
-    # def move_problem(self):
-    #     '''Move the problem due to initial solution.'''
-
+    def move_problem(self):
+        '''Move the problem due to initial solution.'''
+        # Move the tableau values
+        for i in range(self.tableau.shape[0]):
+            self.tableau[i, -1] -= np.dot(self.tableau[i, :-1], self.initial_solution)
+        for i, var in enumerate(self.domain):
+            if var == '>=0' and self.initial_solution[i] != 0:
+                self.domain[i] = 'R'
+                condition = np.zeros(self.tableau.shape[1])
+                condition[i] = 1
+                condition[-1] = -self.initial_solution[i]
+                self.inequalities.append('>=')
+                self.tableau = np.vstack([self.tableau[:-1, :], condition, self.tableau[-1, :]])
 
     def optimize(self):
         '''Optimize the linear programming problem.'''
+        if self.initial_solution is not None:
+            print(self.tab + 'Moving the linear programming problem due to the initial solution...', end='\n')
+            self.move_problem()
+            print(' Done')
         print(self.tab + 'Canonizing the linear programming problem...')
         self.tab = '    '
         if not self.canonize():
@@ -55,6 +68,8 @@ class Simplex:
             return
         self.tab = ''
         print(self.tab + 'Finished simplex algorithm.')
+        if self.initial_solution is not None:
+            self.beauty_solution = list(np.array(self.beauty_solution) + np.array(self.initial_solution))
 
     def canonize(self):
         '''Canonize the linear programming problem.'''
@@ -105,11 +120,14 @@ class Simplex:
             self.add_artificial_variables(artificial_needed)
             
             print(' Done.')
-            print(self.tab + 'Starting Phase I...', end='')
+            print(self.tab + 'Starting Phase I...')
+            self.tab = '            '
 
-            self.phase_i(artificial_needed)
+            if not self.phase_i(artificial_needed):
+                return False
 
-            print(' Done.')
+            self.tab = '        '
+            print(self.tab + 'Done.')
 
             # If the artificial variables are not zero...
             if not self.is_feasible(artificial_needed):
@@ -198,7 +216,7 @@ class Simplex:
         w_objective = np.sum(self.tableau[artificial_needed], axis=0)
         w_objective[list(self.artificial_variables)] = 0
         self.tableau = np.vstack([self.tableau, w_objective])
-        _ = self.simplex(phase_i=True)
+        return self.simplex(phase_i=True)
 
     def is_feasible(self, artificial_needed):
         '''Check if the problem is feasible.
@@ -342,3 +360,6 @@ class Simplex:
                 continue
             self.tableau[i] = self.tableau[i] - self.tableau[r] * self.tableau[i, s]
         self.basis.update({r: s})
+
+        # Try to solve numeric errors
+        self.tableau[(self.tableau > - self.tol) & (self.tableau < self.tol)] = 0

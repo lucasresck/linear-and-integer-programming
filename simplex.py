@@ -53,7 +53,7 @@ class Simplex:
     def optimize(self):
         '''Optimize the linear programming problem.'''
         if self.initial_solution is not None:
-            print(self.tab + 'Moving the linear programming problem due to the initial solution...', end='\n')
+            print(self.tab + 'Moving the linear programming problem due to the initial solution...', end='')
             self.move_problem()
             print(' Done')
         print(self.tab + 'Canonizing the linear programming problem...')

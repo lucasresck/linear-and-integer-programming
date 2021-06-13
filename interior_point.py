@@ -24,6 +24,7 @@ class InteriorPoint:
             dimensions of A (m x n).
         n (int): dimensionality of x and s. Also the one of
             dimensions of A (m x n).
+        path (list): path of points until solution.
         point (tuple of numpy arrays): Iterative solution
             (x_k, y_k, s_k).
         mu (float): the duality measure.
@@ -34,6 +35,7 @@ class InteriorPoint:
         self.A = A
         self.m, self.n = self.A.shape
         self.initial_point = initial_point
+        self.path = [self.initial_point]
         self.point = tuple([i.copy() for i in self.initial_point])
         self.sigma = sigma
         self.epsilon = eps
@@ -86,6 +88,7 @@ class InteriorPoint:
         new_point.append(self.point[1] + step[self.n:self.n+self.m])
         new_point.append(self.point[2] + step[self.n+self.m:])
         self.point = tuple(new_point)
+        self.path.append(self.point)
 
     def get_M_matrix(self):
         '''

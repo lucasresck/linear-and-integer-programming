@@ -31,7 +31,7 @@ class InteriorPoint:
         self.A = A
         self.m, self.n = self.A.shape
         self.initial_point = initial_point
-        self.point = self.initial_point.copy()
+        self.point = tuple([i.copy() for i in self.initial_point])
         self.sigma = sigma
         self.epsilon = eps
         self.mu = self.initial_measure()
@@ -39,7 +39,7 @@ class InteriorPoint:
 
     def initial_measure(self):
         '''Initial duality measure.'''
-        self.mu = np.dot(self.initial_point[0], self.initial_point[1])/self.n
+        return np.dot(self.initial_point[0], self.initial_point[2])/self.n
 
     def iteration(self):
         '''
@@ -49,12 +49,12 @@ class InteriorPoint:
         and iterates until reaches the tolerance.
         '''
 
-        while self.n*self.mu < self.epsilon:
+        while self.n*self.mu >= self.epsilon:
             step = self.calculate_step()
-            self.point += step
+            self.update_point(step)
             self.mu *= self.sigma
         
-        self.solution = self.point.copy()
+        self.solution = tuple([i.copy() for i in self.point])
 
     def calculate_step(self):
         '''
@@ -71,7 +71,16 @@ class InteriorPoint:
         M = self.get_M_matrix()
         b = self.get_b_vector()
         step = np.linalg.solve(M, b)
+        step = step.reshape(2*self.n+self.m)
         return step
+
+    def update_point(self, step):
+        '''Update point using step.'''
+        new_point = []
+        new_point.append(self.point[0] + step[:self.n])
+        new_point.append(self.point[1] + step[self.n:self.n+self.m])
+        new_point.append(self.point[2] + step[self.n+self.m:])
+        self.point = tuple(new_point)
 
     def get_M_matrix(self):
         '''
@@ -87,11 +96,11 @@ class InteriorPoint:
         x, y, s = self.point
         X = np.diag(x)
         S = np.diag(s)
-        
+
         M = np.vstack([
             np.hstack([np.zeros((n, n)), A.transpose(), -np.identity(n)]),
-            np.hstack([A, np.zeros((m, m+n))),
-            np.hstack([S, np.zeros(n, m), X])
+            np.hstack([A, np.zeros((m, m+n))]),
+            np.hstack([S, np.zeros((n, m)), X])
         ])
         return M
 
@@ -105,13 +114,15 @@ class InteriorPoint:
         '''
         sigma = self.sigma
         mu = self.mu
+        m = self.m
+        n = self.n
         e = np.ones((self.n, 1))
         x, y, s = self.point
         X = np.diag(x)
         S = np.diag(s)
 
         b = np.vstack([
-            np.zeros(),
+            np.zeros((n+m, 1)),
             -np.matmul(np.matmul(X, S), e) + sigma*mu*e
         ])
         return b

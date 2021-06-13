@@ -24,7 +24,10 @@ class InteriorPoint:
             dimensions of A (m x n).
         n (int): dimensionality of x and s. Also the one of
             dimensions of A (m x n).
+        point (tuple of numpy arrays): Iterative solution
+            (x_k, y_k, s_k).
         mu (float): the duality measure.
+        n_iter (int): Number of iterations.
     '''
 
     def __init__(self, A, initial_point, sigma, eps):
@@ -35,6 +38,7 @@ class InteriorPoint:
         self.sigma = sigma
         self.epsilon = eps
         self.mu = self.initial_measure()
+        self.n_iter = 0
         self.iteration()
 
     def initial_measure(self):
@@ -53,6 +57,7 @@ class InteriorPoint:
             step = self.calculate_step()
             self.update_point(step)
             self.mu *= self.sigma
+            self.n_iter += 1
         
         self.solution = tuple([i.copy() for i in self.point])
 

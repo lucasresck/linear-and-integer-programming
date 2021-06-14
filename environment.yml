@@ -9,8 +9,8 @@ dependencies:
   - attrs=20.3.0=pyhd3eb1b0_0
   - backcall=0.2.0=pyhd3eb1b0_0
   - bleach=3.3.0=pyhd3eb1b0_0
-  - ca-certificates=2021.4.13=h06a4308_1
-  - certifi=2020.12.5=py38h06a4308_0
+  - ca-certificates=2021.5.25=h06a4308_1
+  - certifi=2021.5.30=py38h06a4308_0
   - cffi=1.14.5=py38h261ae71_0
   - dbus=1.13.18=hb2f20db_0
   - decorator=4.4.2=pyhd3eb1b0_0
@@ -89,6 +89,7 @@ dependencies:
   - pickleshare=0.7.5=pyhd3eb1b0_1003
   - pillow=8.2.0=py38he98fc37_0
   - pip=21.0.1=py38h06a4308_0
+  - plotly=4.14.3=pyhd3eb1b0_0
   - prometheus_client=0.9.0=pyhd3eb1b0_0
   - prompt-toolkit=3.0.8=py_0
   - ptyprocess=0.7.0=pyhd3eb1b0_2
@@ -105,6 +106,7 @@ dependencies:
   - pyzmq=20.0.0=py38h2531618_1
   - qt=5.9.7=h5867ecd_1
   - readline=8.1=h27cfd23_0
+  - retrying=1.3.3=py_2
   - scikit-learn=0.24.1=py38ha9443f7_0
   - scipy=1.5.3=py38h828c644_0
   - seaborn=0.11.1=pyhd3eb1b0_0

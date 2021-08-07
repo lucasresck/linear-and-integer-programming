@@ -23,4 +23,12 @@ In this repository, you will find implementations to Linear and Integer Programm
 
 ### Interior-point method
 
-Look how an interior-point method solves a linear programming problem, with the planes representation the restrictions and the points representing the iterations:
+Look how an interior-point method solves a linear programming problem, with the planes representation the restrictions and the points representing the iterations of the solution:
+
+Small step size             |  Big step size
+:-------------------------:|:-------------------------:
+![](https://raw.githubusercontent.com/lucasresck/linear-integer-programming/main/images/example_1.png)  |  ![](https://raw.githubusercontent.com/lucasresck/linear-integer-programming/main/images/example_2.png)
+
+### Local Interpretable Model-agnostic Explanations (LIME)
+
+Suppose a text classification machine learning model has taken some decision and you want to understand the reasons behind it. We can apply a variation of [LIME](https://arxiv.org/abs/1602.04938), using mixed-integer programming, to solve this. For example, if we want to understand why the model thinks the following text is a positive movie review,

@@ -31,4 +31,6 @@ Small step size             |  Big step size
 
 ### Local Interpretable Model-agnostic Explanations (LIME)
 
-Suppose a text classification machine learning model has taken some decision and you want to understand the reasons behind it. We can apply a variation of [LIME](https://arxiv.org/abs/1602.04938), using mixed-integer programming, to solve this. For example, if we want to understand why the model thinks the following text is a positive movie review,
+Suppose a text classification machine learning model has taken some decision and you want to understand the reasons behind it. We can apply a variation of [LIME](https://arxiv.org/abs/1602.04938), using mixed-integer programming, to solve this. For example, if we want to understand why the model thinks the following text is a positive movie review, we see that the most important words are **loved** and **good**.
+
+![](https://raw.githubusercontent.com/lucasresck/linear-integer-programming/main/images/lime_example.png)
